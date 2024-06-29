@@ -220,7 +220,7 @@ leaf-sw4(config-device-tracking)#tracking ?
 
 CMLで完結するように構成します。
 
-[検証構成図](/asset/expt-sisf-1.png)
+![検証構成図](/asset/expt-sisf-1.png)
 
 spine-sw1, spine-sw2 は中継だけを行うコアスイッチで、端末が直接接続されることはありません。
 実態はCatalyst 9000vです。
