@@ -31,11 +31,11 @@ Switch Integrated Security Features
 かつてIP Device Trackingという名前で古くから実装されていたものと、IPv6のセキュリティ機能を統合したものです。
 
 
-> [!note]
+> [!NOTE]
 > 古いCatalystでは SISF は動きません。
 
-> [! note]
-> 逆に新しいCatalystでは、IP Device Trackingの設定コマンド、IPv6 snoopingの設定コマンドは無くなって、SISFに統合されています
+> [!NOTE]
+> 逆に新しいCatalystでは、IP Device Trackingの設定コマンド、IPv6 snoopingの設定コマンドは無くなっています。
 
 スイッチは受信したトラフィックを分析し、デバイスを識別する情報としてMACアドレスとIP アドレスを抽出して、バインディングテーブルに保存します。
 
@@ -48,29 +48,24 @@ SISFが作るバインディングテーブルを必要とする機能もあり�
 - DHCP スヌーピング
 
 これらが代表的なSISFクライアントです。
+
 SISFクライアントを有効にすると、バインディングテーブルを作るために必要なSISFポリシーが自動で作成されます。
 
 SISFはIPv4とIPv6の両方で動作します。
 
-> [!note]
-> IPv6を使っていない環境では、SISFポリシーの設定を変更して、IPv6でのトラッキングを停止した方が良さそうです。
+> [!NOTE]
+> IPv6を使っていない環境では、SISFポリシーの設定を変更してIPv6でのトラッキングを停止した方がいいです。無用なログが表示されます。
 
 SISFではDHCP、ARP、ND、RAなどのパケットを収集してテーブルを作成します。
 これらパケットを送信しないサイレントノードがいる場合は、スタティックにエントリを設定することもできます。
 
-デフォルト動作は無効になっています。
+SISFデバイストラッキングは、**デフォルトでは無効**になっています。
 
-SISFを有効化するには、次のどちらかです。
+デバイストラッキングポリシーをアタッチすることでSISFを有効化します。
 
-- **デバイストラッキングポリシー** をアタッチする、もしくは
-
-- SISFを必要とする機能を有効にする（ポリシーが自動作成されます）
-
-デバイストラッキングポリシーは、デフォルトで **default** という名前のポリシーが存在します。
-defaultポリシーの内容は変更できません。
-defaultポリシーだけを使って満足する結果を得られればよいのですが、ほとんどの場合は自前のポリシーを作成してアタッチすることになると思います。
-
-SISFはトランクポートでは（デフォルトでは）動作しません。トランクポートは通常スイッチ間を接続しますので、動かすべきでもありません。
+> [!NOTE]
+> ポリシーを指定せずに有効化することもできますが、その場合は **default** という名前のポリシーが作られてアタッチされます。
+> defaultポリシーは変更できません。
 
 バインディングテーブルには、次のような情報が含まれます。
 
@@ -102,27 +97,19 @@ Reachableステートのライフフタイムが切れ、パケットの送信�
 ## 設計項目
 
 どこでSISFデバイストラッキングを有効にするか、を設計します。
+
 コアスイッチのように直接端末が繋がらない装置ではSISFを動かす必要はありません。
 端末を接続するスイッチで有効にします。
 
 SISFを有効にする、というのはSISFポリシーをアタッチする、ということです。
 アタッチする対象はインタフェースもしくはVLANです。
 
-トランクポートでは動作させないようにします。
-MACフラッピングが起きないようにするためにもこれが推奨、とマニュアルに記載されています。
-
-端末が接続されるアクセスポートで動作させます。
-
-このように同じスイッチ内でもSISFを動作させるべきポート（アクセスポート）とそうでないポート（アップリンクポート）が存在するのが一般的だと思います。
-
-このとき、アップリンクになるポートがトランクになっているのであれば、そこではSISFは動きませんので、VLANに対してポリシーをアタッチした方が簡単そうです。
-
-アップリンクであってもVLANをトランクせず、アクセスVLANになっているなら、ポリシーを２個作ってポートごとにアタッチするポリシーを分ける必要がありそうです。
+同じスイッチでも上位のスイッチと接続するいわゆるアップリンクのポートと、端末が接続するアクセスポートが存在するのが一般的だと思います。
+アップリンクとアクセスポートで、デバイストラッキングの動作を変えるために、ポリシーを２個作ってポートごとにアタッチするポリシーを使い分けるのが良さそうです。
 
 通常、L2スイッチには管理用としてIPアドレスを割り当て、端末が接続するVLANに対してはIPアドレスを持っていない場合の方が多いと思います。
 すると、スイッチが送信するプローブのパケットの送信元IPアドレスが0.0.0.0となり、周辺環境に悪影響が出がちです。
-
-SVIにIPアドレスを割り当てるように設計してもよいのですが、スイッチ内に多数のVLANが存在する場合には、あまり良い設計ではありません。
+SVIにIPアドレスを割り当てるように設計してもよいのですが、スイッチ内に多数のVLANが存在する場合、それぞれにアドレスを持たせるのは現実的ではありません。
 `device-tracking tracking auto-source` を設定すれば悪影響を回避できる、とマニュアルに記載されていますので、これを忘れずに設定するようにします。
 
 <br>
@@ -137,9 +124,36 @@ SVIにIPアドレスを割り当てるように設計してもよいのですが
 
 `device-tracking policy <名前>` で新規に作成します。
 
+ポリシーの中で設定できる項目はこれらです。
+
+```
+leaf-sw4(config-device-tracking)#?
+device-tracking policy configuration mode:
+  data-glean            binding recovery by data traffic source address
+                        gleaning
+  default               Set a command to its defaults
+  destination-glean     binding recovery by data traffic destination address
+                        gleaning
+  device-role           Sets the role of the device attached to the port
+  distribution-switch   Distribution switch to sync with
+  exit                  Exit from device-tracking policy configuration mode
+  limit                 Specifies a limit
+  medium-type-wireless  Force medium type to wireless
+  no                    Negate a command or set its defaults
+  prefix-glean          Glean prefixes in RA and DHCP-PD traffic
+  protocol              Sets the protocol to glean (default all)
+  security-level        setup security level
+  tracking              Override default tracking behavior
+  trusted-port          setup trusted port
+  vpc                   setup vpc port
+```
+
+
+
+
 **destination-glean**
 
-ネットワーク内の送信元からスヌーピングされたデータパケットからのアドレスの学習を有効にし、データトラフィックの送信元アドレスとともにバインディングテーブルを読み込みます。次のいずれかのオプションを入力します。
+ネットワーク内の送信元からスヌーピングされたデータパケットからのアドレスの学習を有効にし、データトラフィックの送信元アドレスとともにバインディングテーブルを読み込みます。
 
 **prefix-glean**
 
@@ -147,7 +161,7 @@ IPv6 RA、もしくはDHCP-PDのどちらかでプレフィクスを学習しま
 
 **device-role node**
 
-これがデフォルトです。
+これがデフォルトです。接続している装置が端末である、という前提で動作します。
 
 **device-role switch**
 
@@ -158,34 +172,41 @@ IPv6 RA、もしくはDHCP-PDのどちらかでプレフィクスを学習しま
 > **destination-switch** という設定が？キーで表示されるコマンド一覧に表示されますが、実装されていないので設定しても何もおこりません。
 
 
-- protocol arp
-- protocol dhcp4
-- protocol dhcp6
-- protocol ndp
+**protocol**
+
+protocolに続く設定はこれらです。デフォルトで全て有効になっています。
+
+```text
+  arp    Glean addresses in ARP packets
+  dhcp4  Glean addresses in DHCPv4 packets
+  dhcp6  Glean addresses in DHCPv6 packets
+  ndp    Glean addresses in NDP packets
+  udp    Gleaning from UDP packets
+```
 
 > [!NOTE]
 > **protocol udp** という設定が？キーで表示されるコマンド一覧に表示されますが、実装されていないので設定しても何もおこりません。
 
+**security-level**
 
-**security-level glean**
+security-levelに続く設定はこれらです。デフォルトはguardです。不正なパケットは破棄してくれます。
 
-アドレスをパッシブに収集します。
+```text
+leaf-sw4(config-device-tracking)#security-level ?
+  glean    glean addresses passively
+  guard    inspect and drop un-authorized messages (default)
+  inspect  glean and Validate message
+```
 
-**security-level guard**
+**tracking**
 
-これがデフォルト動作です。不正なメッセージを検知して破棄します。
+trackingに続く設定はこれらです。デフォルトでは**トラッキングしません**。
 
-**security-level inspect**
-
-メッセージを収集して検証します。
-
-**tracking disable**
-
-デバイストラッキングを停止します。
-
-**tracking enable**
-
-デバイストラッキングを有効にする。
+```text
+leaf-sw4(config-device-tracking)#tracking ?
+  disable  Tracking off (default)
+  enable   Tracking on
+```
 
 **trusted-port**
 
@@ -231,12 +252,6 @@ VLAN 10 は端末が接続するVLANで、サブネットは 192.168.**10**.0/24
 VLAN 254 はスイッチの管理用VLANで、サブネットは 192.168.**254**.0/24 です。
 
 r5はVLAN 254とVLAN 10の両方に足を出しています。
-
-
-
-
-
-
 
 ## Ubuntuの設定
 
@@ -737,6 +752,9 @@ host6001(config-if)#ip address 192.168.10.102 255.255.255.0
 host-6001の実態はIOSvです。
 さすが、賢いですね。アドレスが重複したことをコンソールに出してくれました。
 
+> [!NOTE]
+> IOSvがアドレス重複を検出する仕組みはGratuitous ARPです。
+
 また、接続しているsw3のコンソールにこのようなログが表示されました。
 
 ```text
@@ -851,7 +869,6 @@ device-tracking policy sisf_uplink_policy
  device-role switch
  no protocol ndp
  no protocol dhcp6
- no protocol udp !★表示されますがゴミ設定です
 ```
 
 **trusted-port** という設定にするとガード動作が行われなくなります。
@@ -865,14 +882,12 @@ sw3とsw4の設定をこのようにしてみます。
 device-tracking policy sisf_access_policy
  no protocol ndp
  no protocol dhcp6
- no protocol udp !★ゴミ
 !
 device-tracking policy sisf_uplink_policy
  security-level inspect
  device-role switch
  no protocol ndp
  no protocol dhcp6
- no protocol udp !★ゴミ
 !
 ```
 
@@ -888,6 +903,74 @@ Jun 29 18:32:24 192.168.254.3 178: Jun 29 18:32:24.853 JST: %SISF-4-IP_THEFT: IP
 どちらか一方のホストが通信を継続し、どちらか一方がブロックされる、という結果になりました。
 
 アクセス側のポリシーでセキュリティレベルをguardにしていているのが有効に働いています。
+
+ただし、アップリンク側にいる端末の情報もバインディングテーブルにエントリされるようになります。
+VLAN上に多数の端末がいる場合、テーブルが消費するメモリが気になるかもしれません。
+
+```
+leaf-sw3#show device-tracking database
+Binding Table has 4 entries, 4 dynamic (limit 200000)
+Codes: L - Local, S - Static, ND - Neighbor Discovery, ARP - Address Resolution Protocol, DH4 - IPv4 DHCP, DH6 - IPv6 DHCP, PKT - Other Packet, API - API created
+Preflevel flags (prlvl):
+0001:MAC and LLA match     0002:Orig trunk            0004:Orig access
+0008:Orig trusted trunk    0010:Orig trusted access   0020:DHCP assigned
+0040:Cga authenticated     0080:Cert authenticated    0100:Statically assigned
+
+
+    Network Layer Address                    Link Layer Address     Interface  vlan       prlvl      age        state      Time left
+ARP 192.168.10.103                           5254.0002.7482         Gi1/0/3    10         0005       4mn        REACHABLE  47 s try 0
+ARP 192.168.10.102                           5254.001d.836d         Gi1/0/3    10         0005       55s        REACHABLE  255 s try 0
+ARP 192.168.10.101                           5254.0002.7482         Gi1/0/3    10         0005       53mn       STALE     try 0 85251 s
+ARP 192.168.10.5                             5254.0003.6a0d         Gi1/0/2    10         0003       49mn       STALE     try 0 87141 s
+```
+
+<br>
+
+## トラッキングするとどうなる？
+
+sw3とsw4のアクセス側のポリシーをこのようにしてみます。
+
+```text
+!
+device-tracking policy sisf_access_policy
+ no protocol ndp
+ no protocol dhcp6
+ no protocol udp
+ tracking enable
+!
+```
+
+host-6001のアドレスをhost-6003と重複させます。
+
+すると、sw3とsw4は次のようなログをしばらくの間、吐き続けます。
+
+```text
+Jun 29 19:31:53.760 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:31:55.695 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:31:56.719 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:31:57.739 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:31:59.757 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:32:01.760 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:32:02.772 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:32:03.795 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:32:05.295 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:32:06.805 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:32:08.819 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+Jun 29 19:32:09.833 JST: %SISF-4-IP_THEFT: IP Theft IP=192.168.10.103 VLAN=10 MAC=5254.0002.7482 New(Spoof) MAC=5254.0003.c787 IF=Gi1/0/3 New IF=Gi1/0/1
+
+```
+
+また、guard機能もうまく働いていないようです。
+
+```
+host6001#ping 192.168.254.5 repeat 100
+Type escape sequence to abort.
+Sending 100, 100-byte ICMP Echos to 192.168.254.5, timeout is 2 seconds:
+!!!!!!!!!!!!!!!.!!!!!!!!!!!!.!!!!!!!!!!!.!!!!!!!!!!!!.!!!!!!!!!!!...!.
+!!!!!!!!!!!!
+```
+
+仕組みは分かりませんが、トラッキングはデフォルトのまま無効にしておく方が良さそうです。
 
 <br>
 
@@ -930,9 +1013,17 @@ device-tracking policy sisf_access_policy
 
 こうすることで、IPアドレスの重複が起こったとき、どちらか一方は通信を継続できます。
 アドレス重複した端末が共にスローダウンする、という事象よりはずっとよいと思います。
+また、guardしないと状態が安定しないので %SISF-4-IP_THEFT のログが出続けることになります。
 
 IPv6を使った検知は、本当にIPv6を使っている環境でない限り停止しておいたほうがよいです。
-無用なログメッセージがでてきますので。
+無用なログメッセージがでてきます。
+
+デバイストラッキングで何か異常な事象を発見してもデフォルトでは何も表示されません。
+下記を設定しておくことと、IPアドレスの重複をログとして出力できます。
+
+```
+device-tracking logging theft
+```
 
 <br>
 

@@ -1,0 +1,449 @@
+Building configuration...
+
+Current configuration : 15470 bytes
+!
+! Last configuration change at 20:06:26 JST Sat Jun 29 2024
+! NVRAM config last updated at 20:00:08 JST Sat Jun 29 2024
+!
+version 17.10
+service timestamps debug datetime msec localtime show-timezone
+service timestamps log datetime msec localtime show-timezone
+service call-home
+platform punt-keepalive disable-kernel-core
+!
+hostname leaf-sw3
+!
+!
+vrf definition Mgmt-vrf
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ address-family ipv6
+ exit-address-family
+!
+logging buffered 512000
+no logging console
+no aaa new-model
+clock timezone JST 9 0
+switch 1 provision c9kv-q200-8p
+!
+!
+!
+!
+!
+ip domain name iida.local
+!
+!
+!
+login on-success log
+vtp mode transparent
+!
+!
+!
+!
+!
+device-tracking logging theft
+device-tracking tracking auto-source
+!
+device-tracking policy sisf_access_policy
+ no protocol ndp
+ no protocol dhcp6
+ no protocol udp
+!
+device-tracking policy sisf_uplink_policy
+ security-level inspect
+ device-role switch
+ no protocol ndp
+ no protocol dhcp6
+ no protocol udp
+!
+!
+crypto pki trustpoint SLA-TrustPoint
+ enrollment pkcs12
+ revocation-check crl
+!
+crypto pki trustpoint TP-self-signed-2874884994
+ enrollment selfsigned
+ subject-name cn=IOS-Self-Signed-Certificate-2874884994
+ revocation-check none
+ rsakeypair TP-self-signed-2874884994
+!
+!
+crypto pki certificate chain SLA-TrustPoint
+ certificate ca 01
+  30820321 30820209 A0030201 02020101 300D0609 2A864886 F70D0101 0B050030
+  32310E30 0C060355 040A1305 43697363 6F312030 1E060355 04031317 43697363
+  6F204C69 63656E73 696E6720 526F6F74 20434130 1E170D31 33303533 30313934
+  3834375A 170D3338 30353330 31393438 34375A30 32310E30 0C060355 040A1305
+  43697363 6F312030 1E060355 04031317 43697363 6F204C69 63656E73 696E6720
+  526F6F74 20434130 82012230 0D06092A 864886F7 0D010101 05000382 010F0030
+  82010A02 82010100 A6BCBD96 131E05F7 145EA72C 2CD686E6 17222EA1 F1EFF64D
+  CBB4C798 212AA147 C655D8D7 9471380D 8711441E 1AAF071A 9CAE6388 8A38E520
+  1C394D78 462EF239 C659F715 B98C0A59 5BBB5CBD 0CFEBEA3 700A8BF7 D8F256EE
+  4AA4E80D DB6FD1C9 60B1FD18 FFC69C96 6FA68957 A2617DE7 104FDC5F EA2956AC
+  7390A3EB 2B5436AD C847A2C5 DAB553EB 69A9A535 58E9F3E3 C0BD23CF 58BD7188
+  68E69491 20F320E7 948E71D7 AE3BCC84 F10684C7 4BC8E00F 539BA42B 42C68BB7
+  C7479096 B4CB2D62 EA2F505D C7B062A4 6811D95B E8250FC4 5D5D5FB8 8F27D191
+  C55F0D76 61F9A4CD 3D992327 A8BB03BD 4E6D7069 7CBADF8B DF5F4368 95135E44
+  DFC7C6CF 04DD7FD1 02030100 01A34230 40300E06 03551D0F 0101FF04 04030201
+  06300F06 03551D13 0101FF04 05300301 01FF301D 0603551D 0E041604 1449DC85
+  4B3D31E5 1B3E6A17 606AF333 3D3B4C73 E8300D06 092A8648 86F70D01 010B0500
+  03820101 00507F24 D3932A66 86025D9F E838AE5C 6D4DF6B0 49631C78 240DA905
+  604EDCDE FF4FED2B 77FC460E CD636FDB DD44681E 3A5673AB 9093D3B1 6C9E3D8B
+  D98987BF E40CBD9E 1AECA0C2 2189BB5C 8FA85686 CD98B646 5575B146 8DFC66A8
+  467A3DF4 4D565700 6ADF0F0D CF835015 3C04FF7C 21E878AC 11BA9CD2 55A9232C
+  7CA7B7E6 C1AF74F6 152E99B7 B1FCF9BB E973DE7F 5BDDEB86 C71E3B49 1765308B
+  5FB0DA06 B92AFE7F 494E8A9E 07B85737 F3A58BE1 1A48A229 C37C1E69 39F08678
+  80DDCD16 D6BACECA EEBC7CF9 8428787B 35202CDC 60E4616A B623CDBD 230E3AFB
+  418616A9 4093E049 4D10AB75 27E86F73 932E35B5 8862FDAE 0275156F 719BB2F0
+  D697DF7F 28
+  	quit
+crypto pki certificate chain TP-self-signed-2874884994
+ certificate self-signed 01
+  30820330 30820218 A0030201 02020101 300D0609 2A864886 F70D0101 05050030
+  31312F30 2D060355 04031326 494F532D 53656C66 2D536967 6E65642D 43657274
+  69666963 6174652D 32383734 38383439 3934301E 170D3234 30363238 31323030
+  32305A17 0D333430 36323831 32303032 305A3031 312F302D 06035504 03132649
+  4F532D53 656C662D 5369676E 65642D43 65727469 66696361 74652D32 38373438
+  38343939 34308201 22300D06 092A8648 86F70D01 01010500 0382010F 00308201
+  0A028201 0100D5D5 9DFBD4B0 21ECD9A0 6DBCAEDB E81743AB 175F38FC 538CC4D9
+  9B1C75CA 0C35744E AADE0F1A 872F6214 06B90F85 2CBCE0E3 7110E2CB F7FBB42A
+  D9ABD1BE CD8CBA72 9D307A74 E598DEAC 84D0751E 4AF4A986 9D7FBC95 059B3B33
+  F169416F D1D43AED 8DB99C0C 50CD10E9 9292B74C 3915EDEB 4BFB840C B988A5F4
+  AA7E91D9 E42B3189 BB923DE2 1C516066 60C5D27D 9888EDA9 2D0E1453 F6D87895
+  463AFFAC 6E514A3C 22361D11 067889A8 0334059A 432E512F 3CB16E18 A66686F7
+  DE43040B 3EF77685 5A56DD19 4863893B F79E23EE EA758C57 13545434 63410D11
+  1C79A9A3 9505A711 2542EB9D 978888E5 6535AC88 16DA853E F797D4D5 69B18CA0
+  260803E8 D7D70203 010001A3 53305130 0F060355 1D130101 FF040530 030101FF
+  301F0603 551D2304 18301680 147478C2 08B89643 3EC21E9B D2DB8F65 37744A56
+  57301D06 03551D0E 04160414 7478C208 B896433E C21E9BD2 DB8F6537 744A5657
+  300D0609 2A864886 F70D0101 05050003 82010100 3FFD6072 FE1BA5B7 F3E6F1FA
+  C2A0C113 30FBD4C2 96E328B6 184A0FC8 EE6A1361 229A5E98 A51C1DD1 3CC45539
+  390DDAAF BBF07A45 4E687513 087BB05E AB0975DA 9C87B090 2E1CD5C7 F67FFBDF
+  2DC33CFD 3A143DDD 5D5DE0F4 F5A52710 B2BD85FA 8C5DDBA4 EBF45E53 8CBB954F
+  A218C795 8AC88087 4B836D99 B4B99790 8524DF6B 611D1EA6 30641976 F33F2EBA
+  F671F7F6 D38187DC 8B1962AD E19916E2 E4FFE940 03C7B3C3 6E81EA77 FEC9C9A9
+  897C4012 0ADAC795 D7249A14 19CF7192 63A578EB DC989387 F3471D52 280FED76
+  14A001BE EBA0F040 11EC967E 0090DD16 1FE0DB35 24BD0EF9 EC4D9D10 679DBF44
+  11DF81B6 4737F8A7 B8A2E150 E117E610 1CA0E84E
+  	quit
+!
+memory free low-watermark processor 180784
+!
+diagnostic bootup level minimal
+!
+spanning-tree mode mst
+spanning-tree extend system-id
+!
+spanning-tree mst configuration
+ name all_region
+ revision 1
+!
+!
+!
+!
+!
+redundancy
+ mode sso
+crypto engine compliance shield disable
+!
+!
+!
+!
+vlan dot1q tag native
+!
+vlan 10,254
+!
+!
+class-map match-any system-cpp-police-mac-learning
+  description MAC Learning
+class-map match-any system-cpp-police-mcast-data
+  description MCAST Data traffic
+class-map match-any system-cpp-police-topology-control
+  description Topology control - STP
+class-map match-any system-cpp-police-unknown-uc
+  description Unknown UC Packets
+class-map match-any system-cpp-police-sw-forward
+  description Software forwarding
+class-map match-any system-cpp-police-proto-snoop-v6
+  description Protocol snooping v6
+class-map match-any system-cpp-default
+  description Inter FED Traffic
+class-map match-any system-cpp-police-proto-snoop-v4
+  description Protocol snooping v4
+class-map match-any system-cpp-police-rip-bc
+  description RIP Broadcast
+class-map match-any system-cpp-police-svl-ctrl
+  description NGSVL IPC Traffic
+class-map match-any system-cpp-police-mpls-oam
+  description MPLS OAM (traceroute, ping etc)
+class-map match-any system-cpp-police-dhcp-v6
+  description DHCP V6
+class-map match-any system-cpp-police-dhcp-v4
+  description DHCP V4
+class-map match-any system-cpp-police-forus
+  description Forus Address resolution and Forus traffic
+class-map match-any system-cpp-police-icmp-v6
+  description ICMP redirect, ICMP_GEN over IPv6
+class-map match-any system-cpp-police-icmp-v4
+  description ICMP redirect, ICMP_GEN over IPv4
+class-map match-any system-cpp-police-ospf-v6
+  description OSPF over IPv6
+class-map match-any system-cpp-police-ospf-v4
+  description OSPF over IPv4
+class-map match-any system-cpp-police-arp
+  description Address Resolution Protocol
+class-map match-any system-cpp-police-igrp-v4
+  description IGRP and EIGRP over IPv4
+class-map match-any system-cpp-police-fhrp-v4
+  description VRRP, HSRP, GLBP over IPv4
+class-map match-any system-cpp-police-igrp-v6
+  description IGRP and EIGRP over IPv6
+class-map match-any system-cpp-police-fhrp-v6
+  description VRRP, HSRP, GLBP over IPv6
+class-map match-any system-cpp-police-fragment-v4
+  description IPv4 Fragmented Packets
+class-map match-any system-cpp-police-fragment-v6
+  description IPv6 Fragmented Packets
+class-map match-any system-cpp-police-ldp-v4
+  description LDP (MPLS) over IPv4
+class-map match-any system-cpp-police-ldp-v6
+  description LDP (MPLS) over IPv6
+class-map match-any system-cpp-police-l2-control
+  description L2 control
+class-map match-any system-cpp-police-lacp
+  description LACP control traffic for ether channel
+class-map match-any system-cpp-police-bgp-v4
+  description BGP sessions over IPv4
+class-map match-any system-cpp-police-bgp-v6
+  description BGP sessions over IPv6
+class-map match-any system-cpp-police-rip-v6
+  description RIP over IPv6
+class-map match-any system-cpp-police-alt-sw-forward
+  description Alternate Software forwarding
+class-map match-any system-cpp-police-rip-v4
+  description RIP over IPv4
+class-map match-any system-cpp-police-mtu-ttl-fail
+  description MTU/TTL 0/TTL 1 failures
+class-map match-any system-cpp-police-isis
+  description IS-IS protocol
+class-map match-any system-cpp-police-bfd-v4
+  description BFD and BFD Echo over IPv4
+class-map match-any system-cpp-police-udp-v4
+  description UDP V4
+class-map match-any system-cpp-police-mcast-rpf-fail
+  description MCAST Data RPF fail
+class-map match-any system-cpp-police-bfd-v6
+  description BFD and BFD Echo over IPv6
+class-map match-any system-cpp-police-udp-v6
+  description UDP V6
+class-map match-any non-client-nrt-class
+class-map match-any system-cpp-police-tcp-v6
+  description TCP V6
+class-map match-any system-cpp-police-tcp-v4
+  description TCP V4
+class-map match-any system-cpp-default-v6
+  description Inter FED Traffic
+class-map match-any system-cpp-default-v4
+  description Inter FED Traffic
+class-map match-any system-cpp-police-dhcp-snooping
+  description DHCP snooping
+class-map match-any system-cpp-police-svl-ipc
+  description NGSVL IPC Traffic
+class-map match-any system-cpp-police-mcast-ctrl-v4
+  description MCAST control packets over IPv4
+class-map match-any system-cpp-police-system-critical
+  description System Critical and Gold Pkt
+class-map match-any system-cpp-police-mcast-register-v4
+  description MCAST v4 Register traffic
+class-map match-any system-cpp-police-lisp-ctrl
+  description LISP Control Packets
+class-map match-any system-cpp-police-mcast-ctrl-v6
+  description MCAST control packets over IPv6
+class-map match-any system-cpp-police-mcast-register-v6
+  description MCAST v6 Register traffic
+!
+policy-map system-cpp-policy
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0
+ vrf forwarding Mgmt-vrf
+ ip address dhcp
+ negotiation auto
+!
+interface GigabitEthernet1/0/1
+ switchport mode trunk
+ switchport nonegotiate
+ device-tracking attach-policy sisf_uplink_policy
+!
+interface GigabitEthernet1/0/2
+ switchport mode trunk
+ switchport nonegotiate
+ device-tracking attach-policy sisf_uplink_policy
+!
+interface GigabitEthernet1/0/3
+ switchport access vlan 10
+ switchport mode access
+ switchport nonegotiate
+ device-tracking attach-policy sisf_access_policy
+!
+interface GigabitEthernet1/0/4
+ switchport access vlan 10
+ switchport mode access
+ switchport nonegotiate
+ device-tracking attach-policy sisf_access_policy
+!
+interface GigabitEthernet1/0/5
+ switchport access vlan 10
+ switchport mode access
+ switchport nonegotiate
+ device-tracking attach-policy sisf_access_policy
+!
+interface GigabitEthernet1/0/6
+ switchport access vlan 10
+ switchport mode access
+ switchport nonegotiate
+ device-tracking attach-policy sisf_access_policy
+!
+interface GigabitEthernet1/0/7
+ switchport access vlan 10
+ switchport mode access
+ switchport nonegotiate
+ device-tracking attach-policy sisf_access_policy
+!
+interface GigabitEthernet1/0/8
+ switchport access vlan 10
+ switchport mode access
+ switchport nonegotiate
+ device-tracking attach-policy sisf_access_policy
+!
+interface Vlan1
+ no ip address
+!
+interface Vlan254
+ ip address 192.168.254.3 255.255.255.0
+!
+ip default-gateway 192.168.254.5
+ip forward-protocol nd
+ip tcp mss 1280
+ip tcp window-size 212000
+ip http server
+ip http authentication local
+ip http secure-server
+ip ssh bulk-mode 131072
+!
+!
+logging host 192.168.100.100
+!
+snmp-server enable traps snmp authentication linkdown linkup coldstart warmstart
+snmp-server enable traps flowmon
+snmp-server enable traps entity-perf throughput-notif
+snmp-server enable traps call-home message-send-fail server-fail
+snmp-server enable traps tty
+snmp-server enable traps eigrp
+snmp-server enable traps ospf state-change
+snmp-server enable traps ospf errors
+snmp-server enable traps ospf retransmit
+snmp-server enable traps ospf lsa
+snmp-server enable traps ospf cisco-specific state-change nssa-trans-change
+snmp-server enable traps ospf cisco-specific state-change shamlink interface
+snmp-server enable traps ospf cisco-specific state-change shamlink neighbor
+snmp-server enable traps ospf cisco-specific errors
+snmp-server enable traps ospf cisco-specific retransmit
+snmp-server enable traps ospf cisco-specific lsa
+snmp-server enable traps bfd
+snmp-server enable traps license
+snmp-server enable traps smart-license
+snmp-server enable traps auth-framework sec-violation
+snmp-server enable traps rep
+snmp-server enable traps memory bufferpeak
+snmp-server enable traps config-copy
+snmp-server enable traps config
+snmp-server enable traps config-ctid
+snmp-server enable traps energywise
+snmp-server enable traps fru-ctrl
+snmp-server enable traps entity
+snmp-server enable traps flash insertion removal lowspace
+snmp-server enable traps power-ethernet police
+snmp-server enable traps cpu threshold
+snmp-server enable traps syslog
+snmp-server enable traps udld link-fail-rpt
+snmp-server enable traps udld status-change
+snmp-server enable traps vtp
+snmp-server enable traps vlancreate
+snmp-server enable traps vlandelete
+snmp-server enable traps port-security
+snmp-server enable traps envmon
+snmp-server enable traps stackwise
+snmp-server enable traps mvpn
+snmp-server enable traps pw vc
+snmp-server enable traps ipsla
+snmp-server enable traps dhcp
+snmp-server enable traps event-manager
+snmp-server enable traps ike policy add
+snmp-server enable traps ike policy delete
+snmp-server enable traps ike tunnel start
+snmp-server enable traps ike tunnel stop
+snmp-server enable traps ipsec cryptomap add
+snmp-server enable traps ipsec cryptomap delete
+snmp-server enable traps ipsec cryptomap attach
+snmp-server enable traps ipsec cryptomap detach
+snmp-server enable traps ipsec tunnel start
+snmp-server enable traps ipsec tunnel stop
+snmp-server enable traps ipsec too-many-sas
+snmp-server enable traps ospfv3 state-change
+snmp-server enable traps ospfv3 errors
+snmp-server enable traps ipmulticast
+snmp-server enable traps pimstdmib neighbor-loss invalid-register invalid-join-prune rp-mapping-change interface-election
+snmp-server enable traps msdp
+snmp-server enable traps pim neighbor-change rp-mapping-change invalid-pim-message
+snmp-server enable traps bridge newroot topologychange
+snmp-server enable traps stpx inconsistency root-inconsistency loop-inconsistency
+snmp-server enable traps bulkstat collection transfer
+snmp-server enable traps mac-notification change move threshold
+snmp-server enable traps errdisable
+snmp-server enable traps vlan-membership
+snmp-server enable traps transceiver all
+snmp-server enable traps vrfmib vrf-up vrf-down vnet-trunk-up vnet-trunk-down
+snmp-server enable traps rf
+!
+control-plane
+ service-policy input system-cpp-policy
+!
+!
+line con 0
+ exec-timeout 0 0
+ stopbits 1
+line vty 0 4
+ exec-timeout 0 0
+ login
+ transport input ssh
+line vty 5 15
+ login
+ transport input ssh
+!
+call-home
+ ! If contact email address in call-home is configured as sch-smart-licensing@cisco.com
+ ! the email address configured in Cisco Smart License Portal will be used as contact email address to send SCH notifications.
+ contact-email-addr sch-smart-licensing@cisco.com
+ profile "CiscoTAC-1"
+  active
+  destination transport-method http
+ntp source Vlan254
+ntp server 192.168.254.5
+!
+!
+!
+!
+!
+end
