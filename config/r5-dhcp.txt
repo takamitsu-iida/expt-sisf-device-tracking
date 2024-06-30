@@ -1,8 +1,9 @@
 Building configuration...
 
-Current configuration : 6936 bytes
+Current configuration : 7163 bytes
 !
-! Last configuration change at 20:07:10 JST Sat Jun 29 2024
+! Last configuration change at 16:23:54 JST Sun Jun 30 2024
+! NVRAM config last updated at 15:19:42 JST Sun Jun 30 2024
 !
 version 17.3
 service timestamps debug datetime msec localtime show-timezone
@@ -196,6 +197,7 @@ interface GigabitEthernet2
 !
 interface GigabitEthernet3
  ip address 192.168.100.5 255.255.255.0
+ ip nat inside
  negotiation auto
  cdp enable
  no mop enabled
@@ -214,11 +216,14 @@ no ip http server
 ip http secure-server
 !
 ip nat inside source list nat_vlan10 interface GigabitEthernet4 overload
+ip nat inside source list nat_vlan100 interface GigabitEthernet4 overload
 ip nat inside source list nat_vlan254 interface GigabitEthernet4 overload
 ip dns server
 !
 ip access-list extended nat_vlan10
  10 permit ip 192.168.10.0 0.0.0.255 any
+ip access-list extended nat_vlan100
+ 10 permit ip 192.168.100.0 0.0.0.255 any
 ip access-list extended nat_vlan254
  10 permit ip 192.168.254.0 0.0.0.255 any
 !
