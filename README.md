@@ -8,64 +8,135 @@
 [!CAUTION]
 -->
 
-Cisco SISFベースのデバイストラッキングについて、動作検証の結果をまとめます。
+Cisco SISFベースのデバイストラッキングを用いて、端末でのIPアドレス重複を検知できるか、の観点で動作検証を行いました。
+
+その結果をまとめます。
 
 <br>
 
-## マニュアル
+# 検証結果のまとめ
 
-> [!note]
-> Feature NavigatorでSISFを検索しても出てきません。なぜ？
+先に結果を書きます。
 
-- https://www.cisco.com/c/ja_jp/td/docs/switches/lan/catalyst9200/software/release/17-2/configuration_guide/sec/b_172_sec_9200_cg/configuring_sisf_based_device_tracking.html
+SISFベースのデバイストラッキングで実現できること、できないことを要約します。
 
-- https://www.cisco.com/c/ja_jp/support/docs/switches/catalyst-9300-series-switches/221562-troubleshoot-sisf-on-catalyst-9000-serie.html
+<br>
+
+## できること
+
+- スイッチの配下に存在する端末の情報（MACアドレス/IPアドレス/接続ポート/接続VLAN）を知ることができます
+
+- 端末でIPアドレスの重複が発生したときに、スイッチでそれを検知できます
+
+- アドレス重複を検知した際、それをSYSLOGで通知できます
+
+- アドレス重複が発生した際、どちらか一方の端末の通信を保護できます（SISFがない場合は、両方ともスローダウン）
+
+<br>
+
+## できないこと
+
+- スイッチの配下に存在する端末の情報（バインディングテーブルの情報）を外部にエクスポートするには、何らかの工夫が必要です
+
+<br>
+
+## 検討すべきこと
+
+IPアドレスの重複を検知すると `%SISF-4-IP_THEFT: IP Theft IP=192.168.10.102` で始まるログをSYSLOGに送信します。
+SYSLOGサーバでこれを受け取ったときに、次にどういうアクションを取るべきか、は検討項目の一つです。
+少なくとも、検知したスイッチはどれか、どのポートか、どのIPアドレスか、どのMACアドレスか、は分かります。
+アドレスが重複した場合にどっちが正しいのか、までは判断つかないと思いますので、
+これら情報を抽出して管理者に通報する、というのが望まれるアクションのように思います。
+
+インベントリ管理の観点で、どのようなMACアドレスのデバイスがネットワーク上に存在するのか、を調べる必要があります。
+デバイストラッキングのバインディングテーブルがまさにそれなのですが、個々のスイッチのメモリ上にしか存在しませんので、何とかして定期的に収集する必要があります。
+
+> [!TIPS]
+> DNA Essentialライセンスを持ったCatalyst 9300のようにEEMをサポートした機種であれば、定期的に装置自ら外部のサーバに転送することができます。
+> そうでない装置は、Ansibleのような自動化ツールを用いて外から装置に乗り込んで収集するしかなさそうです。
+
+<br>
+
+## 推奨される設計
+
+- コアスイッチでSISFを動かす必要はありません
+
+- 端末がつながるリーフスイッチ（エッジスイッチ）でSISFを有効にします
+
+- リーフスイッチではアップリンクとアクセスポートが存在しますので、デバイストラッキングポリシーを２つ作成します
+
+- IPv6を使っていない場合は、IPv6での情報収集をしないよう、ポリシーを変更します
+
+- スイッチまたぎで発生するIPアドレス重複を検知するには、アップリンクから来る情報も収集します（trusted-portを設定しません）
+
+- SISFで検知したイベントはデフォルトで通知されませんので、アドレス重複を通知したい場合は `device-tracking logging thef` を設定します
+
+- L2スイッチは端末がつながるVLANに足を出していないケースがほとんどですので、`device-tracking tracking auto-source` を設定します
+
+> [!WARN]
+> アップリンクから来る情報を収集すると、自装置配下に**いない**端末の情報もバインディングテーブルにエントリされ、CPUとメモリを多く消費します
+
+<br><br><br>
+
+# マニュアル
+
+**設定ガイド**
+
+https://www.cisco.com/c/ja_jp/td/docs/switches/lan/catalyst9200/software/release/17-2/configuration_guide/sec/b_172_sec_9200_cg/configuring_sisf_based_device_tracking.html
+
+
+**トラブルシューティング**
+
+https://www.cisco.com/c/ja_jp/support/docs/switches/catalyst-9300-series-switches/221562-troubleshoot-sisf-on-catalyst-9000-serie.html
+
+<br>
+
+> [!TIPS]
+> たどり方
+>
+> cisco.com → 上部のSupportをクリック → View all product support → Switches → Catalyst 9200 Series Switches → Configuration Guidesのところにバージョンごとのコンフィグガイドがあります。コンフィグガイドの Security → Configuring Switch Integrated Security Features の順にたどります。
+
+<br>
+
+> [!NOTE]
+> 2024年6月現在　Feature Navigatorで探しても出てきません。なぜ？
 
 <br>
 
 ## SISF Device Trackingとは
 
-Switch Integrated Security Features
+SISFは<u>S</u>witch <u>I</u>ntegrated <u>S</u>ecurity <u>F</u>eaturesの略です。
 
 エンドノードの存在、位置、移動を検出する仕組みです。
-かつてIP Device Trackingという名前で古くから実装されていたものと、IPv6のセキュリティ機能を統合したものです。
-
-
-> [!NOTE]
-> 古いCatalystでは SISF は動きません。
+かつてIP Device Trackingという名前で実装されていたものと、IPv6のセキュリティ機能を統合したものです。
 
 > [!NOTE]
-> 逆に新しいCatalystでは、IP Device Trackingの設定コマンド、IPv6 snoopingの設定コマンドは無くなっています。
+>
+> 古いCatalystでは SISF は動きませんが、旧体系の設定を変換することはできそうです。
+>
+> 逆に新しいCatalystでは、IP Device Trackingの設定コマンドは無くなっています。
 
-スイッチは受信したトラフィックを分析し、デバイスを識別する情報としてMACアドレスとIP アドレスを抽出して、バインディングテーブルに保存します。
+スイッチは受信したトラフィックを分析してデバイスを識別する情報としてMACアドレスとIP アドレスを抽出して、バインディングテーブルに保存します。
 
-SISFが作るバインディングテーブルを必要とする機能もあり、それらをSISFクライアント、と呼びます。
+SISFが構築するバインディングテーブルを必要とする機能もあり、それらをSISFクライアントと呼びます。
+代表的なSISFクライアントはこれらです。
 
 - LISP/EVPN
 - 802.1X
 - Web認証
 - Cisco TrustSec
-- DHCP スヌーピング
+- DHCPスヌーピング
 
-これらが代表的なSISFクライアントです。
-
-SISFクライアントを有効にすると、バインディングテーブルを作るために必要なSISFポリシーが自動で作成されます。
+SISFクライアントを有効にすると、バインディングテーブルを作るのに必要なSISFポリシーが自動で作成されます。
 
 SISFはIPv4とIPv6の両方で動作します。
 
 > [!NOTE]
-> IPv6を使っていない環境では、SISFポリシーの設定を変更してIPv6でのトラッキングを停止した方がいいです。無用なログが表示されます。
+> IPv6を使っていない環境では、SISFポリシーの設定を変更してIPv6での情報収集を停止した方がいいです。無用なログが表示されます。
 
 SISFではDHCP、ARP、ND、RAなどのパケットを収集してテーブルを作成します。
+
 これらパケットを送信しないサイレントノードがいる場合は、スタティックにエントリを設定することもできます。
-
-SISFデバイストラッキングは、**デフォルトでは無効**になっています。
-
-デバイストラッキングポリシーをアタッチすることでSISFを有効化します。
-
-> [!NOTE]
-> ポリシーを指定せずに有効化することもできますが、その場合は **default** という名前のポリシーが作られてアタッチされます。
-> defaultポリシーは変更できません。
 
 バインディングテーブルには、次のような情報が含まれます。
 
@@ -76,21 +147,41 @@ SISFデバイストラッキングは、**デフォルトでは無効**になっ
 
 到達可能性はいくつかの状態があり、代表的なのは`Reachable`、`Stale`、`Down`などです。
 
-- Reachableステート
+<dl>
+    <dt>Reachable</dt>
+    <dd>端末から来た制御パケットがスイッチで正しく処理されていることが確認されている状態です。このステートのライフタイムは <strong>5分</strong> です。</dd>
+    <dt>Stale</dt>
+    <dd>Reachableステートのライフフタイムが切れ、パケットの送信が確認できていない状態です。このステートのライフタイムは <strong>24時間</strong> です。</dd>
+    <dt>Down</dt>
+    <dd>ホストが繋がっているインタフェースがダウンしている状態です。このステートのライフタイムは <strong>24時間</strong> です。</dd>
+</dl>
 
-端末から来た制御パケットがスイッチで正しく処理されていることが確認されている状態です。
-このステートのライフタイムは **5分** です。
+ライフタイムは調整できますが、デフォルトでは端末の存在を確認してから概ね24時間、テーブルにエントリが残ります。
 
-- Staleステート
+バインディングテーブルのエントリを手動で消すこともできます。一括で全て消すこともできますし、IPアドレスやMACアドレス、インタフェースを指定して個別にエントリを消すこともできます。
 
-Reachableステートのライフフタイムが切れ、パケットの送信が確認できていない状態です。
-このステートのライフタイムは **24時間** です。
-したがって端末の存在を確認してから24時間はテーブルにエントリが残ります。
+SISFは**デフォルトで無効**になっています。
 
-- Down
+SISFを有効化するには、デバイストラッキングポリシーをインタフェースもしくはVLANにアタッチします。
 
-ホストが繋がっているインタフェースがダウンしている状態です。
-このステートのライフタイムは **24時間** です。
+> [!NOTE]
+> ポリシーを指定せずに有効化することもできますが、その場合は **default** という名前のポリシーが作られてアタッチされます。
+> defaultポリシーの内容は変更できません。
+
+<br>
+
+SISFで収集した情報をどのように扱うか、を選択できます。選択肢は `Glean` と `Inspect` と `Guard` です。
+
+<dl>
+<dt>Glean</dt>
+<dd>収集するだけ</dd>
+<dt>Inspect</dt>
+<dd>内容を分析して場合によっては通知</dd>
+<dt>Guard</dt>
+<dd>保護動作をし、不正なパケットは破棄します</dd>
+</dl>
+
+デフォルトは`Guard`です。
 
 <br>
 
@@ -263,7 +354,6 @@ CMLで以下の設定に変更します。
 - デフォルトゲートウェイは192.168.100.5
 - DNSの参照先は192.168.254.5
 
-
 ```yaml
 #cloud-config
 hostname: inserthostname-here
@@ -310,6 +400,55 @@ EOS
 > [!NOTE]
 > 元ネタ
 > https://wiki.archlinux.org/title/working_with_the_serial_console
+
+<br>
+
+### TFTPサーバの設定
+
+```bash
+sudo su
+sudo apt update
+sudo apt install tftpd-hpq
+```
+
+設定ファイル `/etc/default/tftpd-hpq` を書き換えます。
+
+```text
+TFTP_USERNAME="tftp"
+TFTP_DIRECTORY="/var/lib/tftpboot"
+TFTP_ADDRESS=":69"
+# TFTP_OPTIONS="--secure"
+```
+
+設定ファイルで指定したディレクトリを作成します。
+
+```bash
+sudo mkdir /var/lib/tftpboot
+sudo chmod -R 777 /var/lib/tftpboot
+sudo chown -R nobody:nogroup /var/lib/tftpboot
+```
+
+systemctlで再起動します。自動起動の設定もやっておきます。
+
+```bash
+sudo systemctl restart tftpd-hpa
+sudo systemctl enable tftpd-hpa
+```
+
+Cisco装置からファイルを書き込むには、先にファイルを作成し、書き込み権限を付与しなければいけません。
+
+TFTPサーバで下準備。
+
+```bash
+touch /var/lib/tftpboot/sw3-dt-database.txt
+chmod a+w /var/lib/tftpboot/sw3-dt-database.txt
+```
+
+Cisco装置から、そのファイルにコピーするには、こうします。
+
+```
+show device-tracking database | redirect tftp://192.168.100.100//var/lib/tftpboot/sw3-dt-database.txt
+```
 
 <br>
 
@@ -865,7 +1004,6 @@ sw3とsw4はどちらもIPアドレスの重複を検知できていません。
 ```text
 device-tracking policy sisf_uplink_policy
  trusted-port !★ここが怪しい
- security-level guard !★表示されません
  device-role switch
  no protocol ndp
  no protocol dhcp6
@@ -928,6 +1066,8 @@ ARP 192.168.10.5                             5254.0003.6a0d         Gi1/0/2    1
 
 ## トラッキングするとどうなる？
 
+デフォルトではトラッキング動作は無効になっています。
+
 sw3とsw4のアクセス側のポリシーをこのようにしてみます。
 
 ```text
@@ -940,7 +1080,7 @@ device-tracking policy sisf_access_policy
 !
 ```
 
-host-6001のアドレスをhost-6003と重複させます。
+host-6001のIPアドレスをhost-6003と重複させます。
 
 すると、sw3とsw4は次のようなログをしばらくの間、吐き続けます。
 
@@ -971,6 +1111,225 @@ Sending 100, 100-byte ICMP Echos to 192.168.254.5, timeout is 2 seconds:
 ```
 
 仕組みは分かりませんが、トラッキングはデフォルトのまま無効にしておく方が良さそうです。
+
+<br>
+
+## 端末が移動するとどうなる？
+
+CMLの操作でhost-6001をsw3の配下からsw4の配下に移動します。
+
+結果的には、特に何も起きません。ログもでません。
+
+sw3のバインディングテーブルはこうなります。
+
+```text
+leaf-sw3#show device-tracking database
+
+    Network Layer Address                    Link Layer Address     Interface  vlan       prlvl      age        state      Time left
+ARP 192.168.10.101                           5254.0002.7482         Gi1/0/1    10         0003       5s         REACHABLE  303 s try 0
+```
+
+接続先がGi1/0/1、つまりアップリンクの先にいる、というように変わりました。
+
+<br>
+
+## いらないVLANの情報を排除するには？
+
+ここまでの設定では、sw3とsw4はアップリンク側から流れてくるパケットの情報も使ってバインディングテーブルを構築します。
+
+したがって、自装置に直接つながっている端末だけでなく、一見無関係なスイッチの情報まで見えてしまいます。
+
+```text
+leaf-sw3#show device-tracking database
+Binding Table has 7 entries, 7 dynamic (limit 200000)
+Codes: L - Local, S - Static, ND - Neighbor Discovery, ARP - Address Resolution Protocol, DH4 - IPv4 DHCP, DH6 - IPv6 DHCP, PKT - Other Packet, API - API created
+Preflevel flags (prlvl):
+0001:MAC and LLA match     0002:Orig trunk            0004:Orig access
+0008:Orig trusted trunk    0010:Orig trusted access   0020:DHCP assigned
+0040:Cga authenticated     0080:Cert authenticated    0100:Statically assigned
+
+
+    Network Layer Address                    Link Layer Address     Interface  vlan       prlvl      age        state      Time left
+ARP 192.168.254.5                            5254.000c.3e3a         Gi1/0/2    254        0003       19mn       STALE     try 0 87363 s
+ARP 192.168.254.4                            5254.000b.ebfc         Gi1/0/1    254        0003       19mn       STALE     try 0 87421 s
+ARP 192.168.254.2                            5254.0019.21ee         Gi1/0/2    254        0003       19mn       STALE     try 0 88137 s
+ARP 192.168.254.1                            5254.0018.a2a3         Gi1/0/1    254        0003       19mn       STALE     try 0 89873 s
+ARP 192.168.10.102                           5254.001d.836d         Gi1/0/3    10         0005       13mn       STALE     try 0 87319 s
+ARP 192.168.10.101                           5254.0002.7482         Gi1/0/3    10         0005       3mn        REACHABLE  69 s try 0
+ARP 192.168.10.5                             5254.0003.6a0d         Gi1/0/2    10         0003       18mn       STALE     try 0 85843 s
+```
+
+このように192.168.254.xのアドレスはスイッチの管理用のアドレスですので、バインディングテーブルに入ってほしくないエントリかもしれません。
+
+「デバイストラッキングをしない」というポリシーは作れませんので、「情報収集しない」というポリシを作ります。
+
+```text
+!
+device-tracking policy sisf_vlan254_policy
+ trusted-port
+ device-role switch
+ no protocol ndp
+ no protocol dhcp6
+ no protocol arp
+ no protocol dhcp4
+ no protocol udp
+!
+```
+
+このポリシーをVLAN 254にアタッチしてみます。
+
+```text
+!
+vlan configuration 254
+ device-tracking attach-policy sisf_vlan254_policy
+!
+```
+
+すると・・・
+
+バインディングテーブルはこのようになります。
+
+```text
+leaf-sw3#show device-tracking database
+Binding Table has 4 entries, 3 dynamic (limit 200000)
+Codes: L - Local, S - Static, ND - Neighbor Discovery, ARP - Address Resolution Protocol, DH4 - IPv4 DHCP, DH6 - IPv6 DHCP, PKT - Other Packet, API - API created
+Preflevel flags (prlvl):
+0001:MAC and LLA match     0002:Orig trunk            0004:Orig access
+0008:Orig trusted trunk    0010:Orig trusted access   0020:DHCP assigned
+0040:Cga authenticated     0080:Cert authenticated    0100:Statically assigned
+
+
+    Network Layer Address                    Link Layer Address     Interface  vlan       prlvl      age        state      Time left
+ARP 192.168.254.4                            5254.000b.ebfc         Gi1/0/1    254        0003       3mn        REACHABLE  125 s
+L   192.168.254.3                            5254.0014.5bdc         Vl254      254        0100       5mn        REACHABLE
+ARP 192.168.254.2                            5254.0019.21ee         Gi1/0/2    254        0003       3mn        REACHABLE  108 s
+ARP 192.168.254.1                            5254.0018.a2a3         Gi1/0/1    254        0003       3mn        REACHABLE  117 s
+```
+
+これではダメですね。VLAN 254上の端末もエントリされています。
+
+アップリンクポートに設定されたポリシーが優先されてしまっています。特定のVLANではバインディングテーブルを作らない、というのはできなそうです。
+
+<br>
+
+## 大量のIPアドレス、MACアドレスが存在したら？
+
+バインディングテーブルがあふれるかもしれません。
+
+バインディングテーブルの最大サイズはマニュアルに記載がありませんが、実機があれば確認できます。
+
+```text
+leaf-sw4(config)#device-tracking binding max-entries ?
+  <1-1000000>  Number of entries
+```
+
+設定できるのは100万(1000000)エントリまでですが、実際に設定すると警告が表示されます。
+
+```
+leaf-sw4(config)# device-tracking binding max-entries 1000000
+
+% Warning: max-entries is greater than default (200000), Please check memory availability
+```
+
+デフォルトで **バインディングテーブルの上限は20万エントリに設定されている** ということが分かります。
+
+一つのポートあたりのMACアドレス、IPアドレスに制限をつけることもできますが、デフォルトではリミットは設定されていません。
+これはそのままでよいでしょう。
+
+では、sw3とsw4のポリシーで上限を3個に設定してみます。
+
+```text
+leaf-sw3(config)#device-tracking binding max-entries 3
+```
+
+これでエントリ数の上限は3個になりました。
+
+すると、端末同士のpingで疎通できない相手がでてきます。
+
+このケースではhost-6002からhost-6004がダメになっていますが、どの区間が通信不可になるかは動的に変わります。
+
+```text
+host6002#ping 192.168.10.101
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.10.101, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 1/1/2 ms
+
+host6002#ping 192.168.10.102
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.10.102, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 1/1/1 ms
+
+host6002#ping 192.168.10.103
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.10.103, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 99/109/116 ms
+
+host6002#ping 192.168.10.104
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.10.104, timeout is 2 seconds:
+.....
+Success rate is 0 percent (0/5)
+```
+
+**バインディングテーブルにエントリがないと通信できない** という結果になりました。
+
+デフォルトの上限20万エントリという数字は十分大きく設定されています。SDMテンプレートを考えれば心配する必要はないと思います。
+
+<br>
+
+## バインディングテーブルを外部に保存するには？
+
+IOS-XEはコマンド出力をリダイレクトできますので、外部のTFTPサーバや、フラッシュメモリに出力を保存できます。
+
+たとえば、このようにリダイレクトすればブートフラッシュ直下に `dt_database.txt` というファイル名で記録されます。
+これはテキストファイルですので more コマンドで中身を閲覧できます。
+
+```text
+show device-tracking database | redirect bootflash:dt_database.txt
+```
+
+> [!TIPS]
+> 外部のTFTPサーバにリダイレクトすることも可能ですが、TFTPサーバ側で事前にファイルを準備し、書き込みできるようにしておく必要があります。
+
+<br>
+
+## 定期的に実行するには？
+
+EEM(Embedded Event Manager)が動く装置であれば定期的に実行することもできます。
+
+> [!WARNING]
+>
+> Catalyst 9200ではEEMは動かないかも？？？（要確認）
+>
+> Catalyst 9300であれば、DNA EssentilsライセンスでEEM4.0が動きます（Feature Navigatorで確認）
+
+たとえば、このようなEEMアプレットを作れば、5分ごとに定期的にコマンドが実行されてブートフラッシュのファイルが更新されます。
+
+```text
+event manager applet EXPORT-DEVICE-TRACKING-DATABASE
+ event timer cron cron-entry "*/5 * * * *"
+ action 1.0 cli command "enable"
+ action 2.0 cli command "show device-tracking database | redirect bootflash:dt_database.txt"
+```
+
+cron-entryはUNIXのcronと同じ指定です。
+
+> [!TIPS]
+> 分 時 日 月 曜日
+> *  *  *  *  *
+
+**毎分** は `* * * * *` です。
+
+**毎時0分** は `0 * * * *` です。0分は一日に24回来ますので、毎時実行されます。
+
+**毎日 2時0分** は `0 2 * * *` です。2時0分は一日に1回しか来ませんので、一日１回実行されます。
+
+**10分ごと** は `*/10 * * * *` です。
+
+デバイストラッキングで作成するバインディングテーブルのエントリは少なくとも一日ありますので、毎日指定の時刻に実行すればよいと思います。
 
 <br>
 
