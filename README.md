@@ -51,7 +51,7 @@ SYSLOGサーバでこれを受け取ったときに、次にどういうアク�
 インベントリ管理の観点で、どのようなMACアドレスのデバイスがネットワーク上に存在するのか、を調べる必要があります。
 デバイストラッキングのバインディングテーブルがまさにそれなのですが、個々のスイッチのメモリ上にしか存在しませんので、何とかして定期的に収集する必要があります。
 
-> [!TIPS]
+> [!TIP]
 > DNA Essentialライセンスを持ったCatalyst 9300のようにEEMをサポートした機種であれば、定期的に装置自ら外部のサーバに転送することができます。
 > そうでない装置は、Ansibleのような自動化ツールを用いて外から装置に乗り込んで収集するしかなさそうです。
 
@@ -73,7 +73,7 @@ SYSLOGサーバでこれを受け取ったときに、次にどういうアク�
 
 - L2スイッチは端末がつながるVLANに足を出していないケースがほとんどですので、`device-tracking tracking auto-source` を設定します
 
-> [!WARN]
+> [!WARNING]
 > アップリンクから来る情報を収集すると、自装置配下に**いない**端末の情報もバインディングテーブルにエントリされ、CPUとメモリを多く消費します
 
 <br><br><br>
@@ -89,14 +89,12 @@ https://www.cisco.com/c/ja_jp/td/docs/switches/lan/catalyst9200/software/release
 
 https://www.cisco.com/c/ja_jp/support/docs/switches/catalyst-9300-series-switches/221562-troubleshoot-sisf-on-catalyst-9000-serie.html
 
-<br>
+<br><br>
 
-> [!TIPS]
+> [!TIP]
 > たどり方
 >
 > cisco.com → 上部のSupportをクリック → View all product support → Switches → Catalyst 9200 Series Switches → Configuration Guidesのところにバージョンごとのコンフィグガイドがあります。コンフィグガイドの Security → Configuring Switch Integrated Security Features の順にたどります。
-
-<br>
 
 > [!NOTE]
 > 2024年6月現在　Feature Navigatorで探しても出てきません。なぜ？
@@ -583,7 +581,7 @@ ntp server 192.168.254.5
 !
 ```
 
-> [!TIPS]
+> [!TIP]
 > `spanning-tree mst 0 priority 24576` は自分で設定したものではありません。
 > `spanning-tree mst 0 root primary` として設定したものが変換されたものです。
 
@@ -1291,7 +1289,7 @@ IOS-XEはコマンド出力をリダイレクトできますので、外部のTF
 show device-tracking database | redirect bootflash:dt_database.txt
 ```
 
-> [!TIPS]
+> [!TIP]
 > 外部のTFTPサーバにリダイレクトすることも可能ですが、TFTPサーバ側で事前にファイルを準備し、書き込みできるようにしておく必要があります。
 
 <br>
@@ -1317,7 +1315,7 @@ event manager applet EXPORT-DEVICE-TRACKING-DATABASE
 
 cron-entryはUNIXのcronと同じ指定です。
 
-> [!TIPS]
+> [!TIP]
 > 分 時 日 月 曜日
 > *  *  *  *  *
 
