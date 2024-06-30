@@ -12,6 +12,13 @@ Cisco SISFベースのデバイストラッキングを用いて、端末でのI
 
 その結果をまとめます。
 
+> [!NOTE]
+>
+> SISFは Switch Integrated Security Features の略です。
+> 単にSISFと呼ぶ場合と、SISFベースのデバイストラッキングと呼ぶ場合、デバイストラッキングと呼ぶ場合がありますが全て同じものを指します。
+> ですが、旧来からあるIP Device Trackingとは異なるものを指します。
+
+
 <br>
 
 # 検証結果のまとめ
