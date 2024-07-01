@@ -110,7 +110,7 @@ https://www.cisco.com/c/ja_jp/support/docs/switches/catalyst-9300-series-switche
 
 ## SISF Device Trackingとは
 
-SISFは<u>S</u>witch <u>I</u>ntegrated <u>S</u>ecurity <u>F</u>eaturesの略です。
+SISFは**S**witch **I**ntegrated **S**ecurity **F**eaturesの略です。
 
 エンドノードの存在、位置、移動を検出する仕組みです。
 かつてIP Device Trackingという名前で実装されていたものと、IPv6のセキュリティ機能を統合したものです。
